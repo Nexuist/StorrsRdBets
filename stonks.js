@@ -12,8 +12,9 @@ let getData = (symbol) =>
   new Promise((resolve, reject) => {
     api.quote({ symbol, modules: ["price"] }, (err, quotes) => {
       if (err != null) return reject();
-      let { regularMarketPrice, regularMarketChangePercent } = quotes.price;
-      resolve([symbol, regularMarketPrice, regularMarketChangePercent]);
+      // console.log(quotes);
+      let { postMarketPrice, postMarketChangePercent } = quotes.price;
+      resolve([symbol, postMarketPrice, postMarketChangePercent]);
     });
   });
 
