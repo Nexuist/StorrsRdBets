@@ -5,7 +5,8 @@ const INTERVAL = 60; // seconds
 const TOKEN = process.env.UCORN;
 const SYMBOLS = ["GME", "AMC", "BB", "NOK", "TSLA", "AMD"];
 const PINNED_MSG_ID = "804441725455826985";
-const EMOTE_UP = "<:evergreen_tree:804447513830227978>";
+// const EMOTE_UP = "<:evergreen_tree:804447513830227978>";
+const EMOTE_UP = "<:GME:804455827427426385>";
 const EMOTE_DOWN = "<:small_red_triangle_down:804448114232131637>";
 
 let getData = (symbol) =>
@@ -68,6 +69,10 @@ bot.on("ready", () => {
 
 bot.on("message", (msg) => {
   if (msg.channel.name != "stonks") return;
+  if (msg.content.toLowerCase().includes("down")) {
+    let channel = msg.channel;
+    channel.send("📈📈📈 STONKS ONLY GO UP! 📈📈📈");
+  }
   if (msg.content.toLowerCase().includes("hodl")) {
     msg.react("💎");
     msg.react("👐");
