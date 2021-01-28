@@ -1,0 +1,19 @@
+{
+  "name": "storrsrdbets",
+  "version": "1.0.0",
+  "description": "",
+  "main": "stonks.js",
+  "dependencies": {
+    "discord.js": "^11.2.1",
+    "dotenv": "^8.2.0",
+    "node-fetch": "^2.6.1",
+    "opn": "^5.1.0",
+    "yahoo-finance": "^0.3.6"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC"
+}
