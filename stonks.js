@@ -4,30 +4,40 @@ const api = require("yahoo-finance");
 const fetch = require("node-fetch");
 const INTERVAL = 60; // seconds
 const TOKEN = process.env.UCORN;
-const SYMBOLS = ["GME", "AMC", "BB", "NOK", "TSLA", "AMD"];
+const SYMBOLS = [
+  "GME",
+  "AMC",
+  "BB",
+  "NOK",
+  "TSLA",
+  "AMD",
+  "BTC-USD",
+  "DOGE-USD",
+];
 const PINNED_MSG_ID = "804441725455826985";
 // const EMOTE_UP = "<:evergreen_tree:804447513830227978>";
 const EMOTE_UP = "<:GME:804455827427426385>";
 const EMOTE_DOWN = "<:small_red_triangle_down:804448114232131637>";
 
-let getCryptoData = async (symbol) => {
-  let res = await fetch(
-    `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=${symbol}`,
-    {
-      headers: {
-        "X-CMC_PRO_API_KEY": process.env.CMK,
-      },
-    }
-  ).then((res) => res.json());
-  let { price, percent_change_24h } = res.data[symbol].quote.USD;
-  return [symbol, price, percent_change_24h / 100];
-};
+// let getCryptoData = async (symbol) => {
+//   let res = await fetch(
+//     `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=${symbol}`,
+//     {
+//       headers: {
+//         "X-CMC_PRO_API_KEY": process.env.CMK,
+//       },
+//     }
+//   ).then((res) => res.json());
+//   let { price, percent_change_24h } = res.data[symbol].quote.USD;
+//   return [symbol, price, percent_change_24h / 100];
+// };
+
 let getData = (symbol) =>
   new Promise((resolve, reject) => {
     api.quote({ symbol, modules: ["price"] }, (err, quotes) => {
       if (err != null) return reject();
-      let { postMarketPrice, postMarketChangePercent } = quotes.price;
-      resolve([symbol, postMarketPrice, postMarketChangePercent]);
+      let { regularMarketPrice, regularMarketChangePercent } = quotes.price;
+      resolve([symbol, regularMarketPrice, regularMarketChangePercent]);
     });
   });
 
@@ -37,8 +47,6 @@ let generateTopicString = async () => {
   try {
     let promises = SYMBOLS.map((symbol) => getData(symbol));
     let results = await Promise.all(promises);
-    results.push(await getCryptoData("DOGE"));
-    results.push(await getCryptoData("BTC"));
     let str = "";
     let i = 0;
     for ([symbol, price, change] of results) {
@@ -46,7 +54,9 @@ let generateTopicString = async () => {
       let emote = price > cachedPrice ? EMOTE_UP : EMOTE_DOWN;
       if (price == cachedPrice) emote = "";
       let pct = (change * 100).toFixed(2);
-      str += `${emote} ${symbol}: ${price.toFixed(symbol == "DOGE" ? 4 : 2)} (${pct}%) | `;
+      str += `${emote} ${symbol}: ${price.toFixed(
+        symbol == "DOGE-USD" ? 4 : 2
+      )} (${pct}%) | `;
       i++;
     }
     cachedResults = results;
