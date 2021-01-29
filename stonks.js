@@ -29,8 +29,17 @@ let getData = (symbol) =>
   new Promise((resolve, reject) => {
     api.quote({ symbol, modules: ["price"] }, (err, quotes) => {
       if (err != null) return reject();
-      let { regularMarketPrice, regularMarketChangePercent } = quotes.price;
-      resolve([symbol, regularMarketPrice, regularMarketChangePercent]);
+      let price, change;
+      if (symbol == "DOGE-USD" || symbol == "BTC-USD") {
+        let { regularMarketPrice, regularMarketChangePercent } = quotes.price;
+        price = regularMarketPrice;
+        change = regularMarketChangePercent;
+      } else {
+        let { postMarketPrice, postMarketChangePercent } = quotes.price;
+        price = postMarketPrice;
+        change = postMarketChangePercent;
+      }
+      resolve([symbol, price, change]);
     });
   });
 
@@ -85,7 +94,7 @@ let refresh = async () => {
 
 let help = async (msg) => {
   msg.channel.send(
-    "🚀 yolo <ticker> <shares (fractional supported)> <buy in price>"
+    "🚀 yolo <shares (fractional supported)> <ticker> <buy in price>"
   );
 };
 
@@ -102,7 +111,7 @@ let yolo = async (msg) => {
     buyInPrice = parseFloat(buyInPrice);
     if (!SYMBOLS.includes(ticker))
       return channel.send(
-        `🚫 ${ticker} not supported yet. Wake me up when it flys past the moon 🌕 🚀`
+        `🚫 ${ticker} not supported yet. Wake me up when it flies past the moon 🌕 🚀`
       );
     if (shares == 0) return channel.send(`🚨🚨🚨 POOR DETECTED 🚨🚨🚨`);
     DB.run(
@@ -118,6 +127,52 @@ let yolo = async (msg) => {
     channel.send("🚫 I can't read! Try again! 🚫");
     console.log("FAILURE: ", err);
   }
+};
+
+let winners = async (msg) => {
+  DB.all("SELECT * FROM holds", async (err, rows) => {
+    let prices = cachedResults.reduce((kv, res) => {
+      kv[res[0]] = res[1];
+      return kv;
+    }, {});
+    let holds = rows.reduce((kv, row) => {
+      let { user_id, ticker, shares, buy_price } = row;
+      ticker = ticker.toUpperCase();
+      if (!(user_id in kv)) kv[user_id] = { totalProfit: 0, positions: [] };
+      let profit = shares * prices[ticker] - shares * buy_price;
+      kv[user_id].positions.push([ticker, shares, buy_price, profit]);
+      kv[user_id].totalProfit += profit;
+      return kv;
+    }, {});
+    let winners = Object.keys(holds);
+    winners = winners.sort(
+      (a, b) => holds[b].totalProfit - holds[a].totalProfit
+    );
+    let leaderboard = "";
+    leaderboard += "WINNERS\n";
+    leaderboard += "=======\n\n";
+    let i = 0;
+    for (winner of winners) {
+      let { totalProfit, positions } = holds[winner];
+      totalProfit = totalProfit.toFixed(2);
+      if (+totalProfit > 0) totalProfit = `+${totalProfit}`;
+      positions = positions.sort((a, b) => b[3] - a[3]); // sort positions by profit
+      let positionsString = "";
+      for ([ticker, shares, buy_price, profit] of positions) {
+        ticker = ticker.toUpperCase();
+        profit = profit.toFixed(2);
+        if (+profit > 0) profit = `+${profit}`;
+        positionsString += `${profit} ${shares} ${ticker} @ ${buy_price} | `;
+      }
+      positionsString = positionsString.slice(0, -2); // remove trailing pipe
+      let { username, discriminator } = await bot.fetchUser(winner);
+      leaderboard += `${
+        i + 1
+      }. ${username}#${discriminator} ${totalProfit} (${positionsString}) \n`;
+      i += 1;
+    }
+    msg.channel.sendCode("md", leaderboard);
+  });
 };
 
 let rocket = (msg) =>
@@ -144,6 +199,7 @@ bot.on("ready", () => {
 
 bot.on("message", (msg) => {
   if (msg.channel.name != "stonks") return;
+  if (msg.author.id == bot.user.id) return; // don't respond to own messages
   let channel = msg.channel;
   let text = msg.content.toLowerCase();
   if (text.includes("down")) channel.send("📈📈📈 STONKS ONLY GO UP! 📈📈📈");
@@ -153,6 +209,7 @@ bot.on("message", (msg) => {
   }
   if (text.startsWith("🚀 help")) return help(msg);
   if (text.startsWith("🚀 yolo")) return yolo(msg);
+  if (text.startsWith("🚀 winners")) return winners(msg);
   if (text.startsWith("🚀")) return rocket(msg);
 });
 
