@@ -93,8 +93,10 @@ let yolo = async (msg) => {
   let channel = msg.channel;
   try {
     let userId = msg.author.id;
+    let text = msg.content.toLowerCase();
     let parts = text.split(" ");
-    let { yolo, ticker, shares, buyInPrice } = parts;
+    console.log(parts);
+    let [_, __, shares, ticker, buyInPrice] = parts;
     ticker = ticker.toUpperCase();
     shares = parseFloat(shares);
     buyInPrice = parseFloat(buyInPrice);
@@ -113,6 +115,7 @@ let yolo = async (msg) => {
     );
   } catch (err) {
     channel.send("🚫 I can't read! Try again! 🚫");
+    console.log("FAILURE: ", err);
   }
 };
 
@@ -154,6 +157,4 @@ bot.on("message", (msg) => {
 
 bot.on("error", (err) => console.log("FAILURE", err));
 
-process.on("SIGINT", () => {
-  DB.close();
-});
+// process.on("SIGINT", () => DB.close());
