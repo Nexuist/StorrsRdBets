@@ -44,8 +44,8 @@ let generateTopicString = async () => {
       let cachedPrice = cachedResults.length > 0 ? cachedResults[i][1] : 0;
       let emote = price > cachedPrice ? EMOTE_UP : EMOTE_DOWN;
       if (price == cachedPrice) emote = "";
-      let pct = (change * 100).toFixed(symbol == "DOGE" ? 4 : 2);
-      str += `${emote} ${symbol}: ${price.toFixed(2)} (${pct}%) | `;
+      let pct = (change * 100).toFixed(2);
+      str += `${emote} ${symbol}: ${price.toFixed(symbol == "DOGE" ? 4 : 2)} (${pct}%) | `;
       i++;
     }
     cachedResults = results;
