@@ -1,9 +1,11 @@
 require("dotenv").config();
 const discord = require("discord.js");
 const api = require("yahoo-finance");
-const fetch = require("node-fetch");
+const sqlite3 = require("sqlite3").verbose();
+
 const INTERVAL = 60; // seconds
 const TOKEN = process.env.UCORN;
+const DB = new sqlite3.Database("./stonks.db");
 const SYMBOLS = [
   "GME",
   "AMC",
@@ -19,18 +21,9 @@ const PINNED_MSG_ID = "804441725455826985";
 const EMOTE_UP = "<:GME:804455827427426385>";
 const EMOTE_DOWN = "<:small_red_triangle_down:804448114232131637>";
 
-// let getCryptoData = async (symbol) => {
-//   let res = await fetch(
-//     `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=${symbol}`,
-//     {
-//       headers: {
-//         "X-CMC_PRO_API_KEY": process.env.CMK,
-//       },
-//     }
-//   ).then((res) => res.json());
-//   let { price, percent_change_24h } = res.data[symbol].quote.USD;
-//   return [symbol, price, percent_change_24h / 100];
-// };
+// bot.on("message", msg => console.log(msg.author.name, bot.fetchUser(msg.author.id)))
+
+// Main functionality
 
 let getData = (symbol) =>
   new Promise((resolve, reject) => {
@@ -43,6 +36,7 @@ let getData = (symbol) =>
 
 let cachedTopicString = "";
 let cachedResults = [];
+// Get new prices and update cache
 let generateTopicString = async () => {
   try {
     let promises = SYMBOLS.map((symbol) => getData(symbol));
@@ -60,6 +54,9 @@ let generateTopicString = async () => {
       i++;
     }
     cachedResults = results;
+    DB.run("UPDATE key_value SET value = ? WHERE key = 'cache'", [
+      JSON.stringify(results),
+    ]);
 
     str = str.slice(0, -2); // Remove trailing pipe
     return str;
@@ -69,8 +66,8 @@ let generateTopicString = async () => {
   }
 };
 
-let ping = async () => {
-  console.log("Ping!");
+let refresh = async () => {
+  console.log("Refresh!");
   try {
     let topic = await generateTopicString();
     cachedTopicString = topic;
@@ -84,32 +81,79 @@ let ping = async () => {
   }
 };
 
+// Supplemental functions
+
+let help = async (msg) => {
+  msg.channel.send(
+    "🚀 yolo <ticker> <shares (fractional supported)> <buy in price>"
+  );
+};
+
+let yolo = async (msg) => {
+  let channel = msg.channel;
+  try {
+    let userId = msg.author.id;
+    let parts = text.split(" ");
+    let { yolo, ticker, shares, buyInPrice } = parts;
+    ticker = ticker.toUpperCase();
+    shares = parseFloat(shares);
+    buyInPrice = parseFloat(buyInPrice);
+    if (!SYMBOLS.includes(ticker))
+      return channel.send(
+        `🚫 ${ticker} not supported yet. Wake me up when it flys past the moon 🌕 🚀`
+      );
+    DB.run(
+      "INSERT INTO holds (user_id, ticker, shares, buy_price) VALUES (?, ?, ?, ?)",
+      [userId, ticker, shares, buyInPrice],
+      (rows, err) => {
+        if (err)
+          return channel.send("🚫 Database error! I can't write either! 🚫");
+        return channel.send(`✅ YOLO: ${shares} ${ticker} @ ${buyInPrice}`);
+      }
+    );
+  } catch (err) {
+    channel.send("🚫 I can't read! Try again! 🚫");
+  }
+};
+
+let rocket = (msg) =>
+  msg.channel.send(cachedTopicString).then((msg) => {
+    msg.react("💎");
+    msg.react("👐");
+  });
+
 let bot = new discord.Client();
 bot.login(TOKEN);
+DB.get("SELECT value FROM key_value WHERE key = 'cache'", (err, row) => {
+  if (!err) {
+    console.log("Fetched from cache: ", row);
+    cachedResults = JSON.parse(row.value);
+  } else {
+    console.log("FAILURE: ", err);
+  }
+});
 
 bot.on("ready", () => {
-  ping();
-  setInterval(ping, INTERVAL * 1000);
+  refresh();
+  setInterval(refresh, INTERVAL * 1000);
 });
 
 bot.on("message", (msg) => {
   if (msg.channel.name != "stonks") return;
-  if (msg.content.toLowerCase().includes("down")) {
-    let channel = msg.channel;
-    channel.send("📈📈📈 STONKS ONLY GO UP! 📈📈📈");
-  }
-  if (msg.content.toLowerCase().includes("hodl")) {
-    msg.react("💎");
-    msg.react("👐");
-  }
-  if (!msg.content.startsWith("🚀")) return;
   let channel = msg.channel;
-  channel.send(cachedTopicString).then((msg) => {
+  let text = msg.content.toLowerCase();
+  if (text.includes("down")) channel.send("📈📈📈 STONKS ONLY GO UP! 📈📈📈");
+  if (text.includes("hodl")) {
     msg.react("💎");
     msg.react("👐");
-  });
+  }
+  if (text.startsWith("🚀 help")) return help(msg);
+  if (text.startsWith("🚀 yolo")) return yolo(msg);
+  if (text.startsWith("🚀")) return rocket(msg);
 });
 
-bot.on("error", (err) => {
-  console.log("FAILURE", err);
+bot.on("error", (err) => console.log("FAILURE", err));
+
+process.on("SIGINT", () => {
+  DB.close();
 });

@@ -8,6 +8,7 @@
     "dotenv": "^8.2.0",
     "node-fetch": "^2.6.1",
     "opn": "^5.1.0",
+    "sqlite3": "^5.0.1",
     "yahoo-finance": "^0.3.6"
   },
   "devDependencies": {},
