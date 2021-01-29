@@ -1,6 +1,7 @@
 require("dotenv").config();
 const discord = require("discord.js");
 const api = require("yahoo-finance");
+const fetch = require("node-fetch");
 const INTERVAL = 60; // seconds
 const TOKEN = process.env.UCORN;
 const SYMBOLS = ["GME", "AMC", "BB", "NOK", "TSLA", "AMD"];
@@ -9,11 +10,22 @@ const PINNED_MSG_ID = "804441725455826985";
 const EMOTE_UP = "<:GME:804455827427426385>";
 const EMOTE_DOWN = "<:small_red_triangle_down:804448114232131637>";
 
+let getCryptoData = async () => {
+  let res = await fetch(
+    "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=doge",
+    {
+      headers: {
+        "X-CMC_PRO_API_KEY": process.env.CMK,
+      },
+    }
+  ).then((res) => res.json());
+  let { price, percent_change_24h } = res.data.DOGE.quote.USD;
+  return ["DOGE", price, percent_change_24h / 100];
+};
 let getData = (symbol) =>
   new Promise((resolve, reject) => {
     api.quote({ symbol, modules: ["price"] }, (err, quotes) => {
       if (err != null) return reject();
-      // console.log(quotes);
       let { postMarketPrice, postMarketChangePercent } = quotes.price;
       resolve([symbol, postMarketPrice, postMarketChangePercent]);
     });
@@ -25,6 +37,7 @@ let generateTopicString = async () => {
   try {
     let promises = SYMBOLS.map((symbol) => getData(symbol));
     let results = await Promise.all(promises);
+    results.push(await getCryptoData());
     let str = "";
     let i = 0;
     for ([symbol, price, change] of results) {
@@ -36,6 +49,7 @@ let generateTopicString = async () => {
       i++;
     }
     cachedResults = results;
+
     str = str.slice(0, -2); // Remove trailing pipe
     return str;
   } catch (err) {
