@@ -10,17 +10,17 @@ const PINNED_MSG_ID = "804441725455826985";
 const EMOTE_UP = "<:GME:804455827427426385>";
 const EMOTE_DOWN = "<:small_red_triangle_down:804448114232131637>";
 
-let getCryptoData = async () => {
+let getCryptoData = async (symbol) => {
   let res = await fetch(
-    "https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=doge",
+    `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=${symbol}`,
     {
       headers: {
         "X-CMC_PRO_API_KEY": process.env.CMK,
       },
     }
   ).then((res) => res.json());
-  let { price, percent_change_24h } = res.data.DOGE.quote.USD;
-  return ["DOGE", price, percent_change_24h / 100];
+  let { price, percent_change_24h } = res.data[symbol].quote.USD;
+  return [symbol, price, percent_change_24h / 100];
 };
 let getData = (symbol) =>
   new Promise((resolve, reject) => {
@@ -37,7 +37,8 @@ let generateTopicString = async () => {
   try {
     let promises = SYMBOLS.map((symbol) => getData(symbol));
     let results = await Promise.all(promises);
-    results.push(await getCryptoData());
+    results.push(await getCryptoData("DOGE"));
+    results.push(await getCryptoData("BTC"));
     let str = "";
     let i = 0;
     for ([symbol, price, change] of results) {
