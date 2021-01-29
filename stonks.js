@@ -104,6 +104,7 @@ let yolo = async (msg) => {
       return channel.send(
         `🚫 ${ticker} not supported yet. Wake me up when it flys past the moon 🌕 🚀`
       );
+    if (shares == 0) return channel.send(`🚨🚨🚨 POOR DETECTED 🚨🚨🚨`);
     DB.run(
       "INSERT INTO holds (user_id, ticker, shares, buy_price) VALUES (?, ?, ?, ?)",
       [userId, ticker, shares, buyInPrice],

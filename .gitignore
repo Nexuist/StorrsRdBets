@@ -2,3 +2,4 @@ node_modules
 .env
 repl.js
 backup.db
+stonks.db
