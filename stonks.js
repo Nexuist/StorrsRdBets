@@ -200,7 +200,6 @@ let winners = async (msg) => {
         if (+profit > 0) profit = `+${profit}`;
         positionsString += `${profit} ${shares} ${ticker} @ ${buy_price}\n`;
       }
-      positionsString = positionsString.slice(0, -2); // remove trailing pipe
       let { username, discriminator } = await bot.fetchUser(winner);
       embed.addField(`${i + 1}. ${username}#${discriminator} ${totalProfit}`, positionsString)
       i += 1;
