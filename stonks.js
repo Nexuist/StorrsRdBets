@@ -179,9 +179,14 @@ let winners = async (msg) => {
     winners = winners.sort(
       (a, b) => holds[b].totalProfit - holds[a].totalProfit
     );
-    let leaderboard = "";
-    leaderboard += "WINNERS\n";
-    leaderboard += "=======\n\n";
+    let channel = msg.channel;
+    let embed = new discord.RichEmbed()
+      .setColor("#0099ff")
+      .setTitle("Stonk Winnerboard")
+      .setURL("https://www.youtube.com/watch?v=DLzxrzFCyOs")
+      .setThumbnail("https://tonispilsbury.com/wp-content/uploads/2011/11/chickentenders4.jpg")
+      .setTimestamp()
+      .setFooter("StorrsRdBets");
     let i = 0;
     for (winner of winners) {
       let { totalProfit, positions } = holds[winner];
@@ -193,19 +198,16 @@ let winners = async (msg) => {
         ticker = ticker.toUpperCase();
         profit = profit.toFixed(2);
         if (+profit > 0) profit = `+${profit}`;
-        positionsString += `${profit} ${shares} ${ticker} @ ${buy_price} | `;
+        positionsString += `${profit} ${shares} ${ticker} @ ${buy_price}\n`;
       }
       positionsString = positionsString.slice(0, -2); // remove trailing pipe
       let { username, discriminator } = await bot.fetchUser(winner);
-      leaderboard += `${
-        i + 1
-      }. ${username}#${discriminator} ${totalProfit} (${positionsString}) \n`;
+      embed.addField(`${i + 1}. ${username}#${discriminator} ${totalProfit}`, positionsString)
       i += 1;
     }
-    msg.channel.sendCode("md", leaderboard);
+    msg.channel.send(embed);
   });
 };
-
 let rocket = (msg) =>
   msg.channel.send(cachedTopicString).then((msg) => {
     msg.react("💎");
