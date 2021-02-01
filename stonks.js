@@ -94,9 +94,14 @@ let refresh = async () => {
 
 let help = async (msg) => {
   msg.channel.send(
-    "🚀 yolo <shares (fractional supported)> <ticker> <buy in price>"
+    `
+🚀
+🚀 winners
+🚀 yolo <shares (fractional supported)> <ticker> <buy in price>
+🚀 oloy <shares (fractional supported)> <ticker> <buy in price>`
   );
 };
+
 
 let yolo = async (msg) => {
   let channel = msg.channel;
@@ -128,6 +133,32 @@ let yolo = async (msg) => {
     console.log("FAILURE: ", err);
   }
 };
+
+let oloy = async (msg) => {
+  let channel = msg.channel;
+  try {
+    let userId = msg.author.id;
+    let text = msg.content.toLowerCase();
+    let parts = text.split(" ");
+    let [_, __, shares, ticker, buyInPrice] = parts;
+    ticker = ticker.toUpperCase();
+    shares = parseFloat(shares);
+    if (shares == 0) return;
+    buyInPrice = parseFloat(buyInPrice);
+    DB.run(
+      "DELETE FROM holds WHERE user_id = ? AND ticker = ? AND shares = ? AND buy_price = ?",
+      [userId, ticker, shares, buyInPrice],
+      (rows, err) => {
+        if (err)
+          return channel.send("🚫 Database error! I can't write! 🚫");
+        return channel.send(`✅ OLOY: ${shares} ${ticker} @ ${buyInPrice}`);
+      }
+    );
+  } catch (err) {
+    channel.send("🚫 I can't read! Try again! 🚫");
+    console.log("FAILURE: ", err);
+  }
+}
 
 let winners = async (msg) => {
   DB.all("SELECT * FROM holds", async (err, rows) => {
@@ -209,6 +240,7 @@ bot.on("message", (msg) => {
   }
   if (text.startsWith("🚀 help")) return help(msg);
   if (text.startsWith("🚀 yolo")) return yolo(msg);
+  if (text.startsWith("🚀 oloy")) return oloy(msg);
   if (text.startsWith("🚀 winners")) return winners(msg);
   if (text.startsWith("🚀")) return rocket(msg);
 });
