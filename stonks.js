@@ -35,9 +35,9 @@ let getData = (symbol) =>
         price = regularMarketPrice;
         change = regularMarketChangePercent;
       } else {
-        let { regularMarketPrice, regularMarketChangePercent } = quotes.price;
-        price = regularMarketPrice;
-        change = regularMarketChangePercent;
+        let { postMarketPrice, postMarketChangePercent } = quotes.price;
+        price = postMarketPrice;
+        change = postMarketChangePercent;
       }
       resolve([symbol, price, change]);
     });
@@ -166,9 +166,8 @@ let winners = async (msg) => {
       }
       positionsString = positionsString.slice(0, -2); // remove trailing pipe
       let { username, discriminator } = await bot.fetchUser(winner);
-      leaderboard += `${
-        i + 1
-      }. ${username}#${discriminator} ${totalProfit} (${positionsString}) \n`;
+      leaderboard += `${i + 1
+        }. ${username}#${discriminator} ${totalProfit} (${positionsString}) \n`;
       i += 1;
     }
     msg.channel.sendCode("md", leaderboard);
