@@ -35,9 +35,12 @@ let getData = (symbol) =>
         price = regularMarketPrice;
         change = regularMarketChangePercent;
       } else {
-        let { postMarketPrice, postMarketChangePercent } = quotes.price;
-        price = postMarketPrice;
-        change = postMarketChangePercent;
+        let { regularMarketPrice, regularMarketChangePercent } = quotes.price;
+	price = regularMarketPrice;
+	change = regularMarketChangePercent;
+	//let { postMarketPrice, postMarketChangePercent } = quotes.price;
+        //price = postMarketPrice;
+        //change = postMarketChangePercent;
       }
       resolve([symbol, price, change]);
     });
