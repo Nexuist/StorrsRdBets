@@ -9,6 +9,7 @@ const DB = new sqlite3.Database("./stonks.db");
 const SYMBOLS = [
   "GME",
   "AMC",
+  "RBLX",
   "BB",
   "NOK",
   "TSLA",
